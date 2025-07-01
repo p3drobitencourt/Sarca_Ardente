@@ -53,18 +53,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
-                  <SidebarMenuButton
-                    isActive={pathname === item.href}
-                    asChild
-                    tooltip={item.label}
-                  >
-                    <a>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </Link>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  tooltip={item.label}
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
@@ -80,14 +78,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="text-xs text-muted-foreground">professor@exemplo.com</span>
             </div>
           </div>
-           <Link href="/login" passHref legacyBehavior>
-            <SidebarMenuButton asChild tooltip="Sair">
-                <a>
-                    <LogOut />
-                    <span>Sair</span>
-                </a>
-            </SidebarMenuButton>
-           </Link>
+           <SidebarMenuButton asChild tooltip="Sair">
+            <Link href="/login">
+                <LogOut />
+                <span>Sair</span>
+            </Link>
+           </SidebarMenuButton>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
