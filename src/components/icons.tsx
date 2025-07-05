@@ -5,3 +5,4 @@ export const Icons = {
     <Flame {...props} />
   ),
 };
+

@@ -19,18 +19,20 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
+  LayoutDashboard,
   Users,
   ClipboardCheck,
   BarChart3,
   LogOut,
-  Settings,
+  Info,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: Home },
-  { href: "/members", label: "Membros", icon: Users },
+  { href: "/", label: "Ínicio", icon: Home },
   { href: "/attendance/record", label: "Registrar Presença", icon: ClipboardCheck },
+  { href: "/members", label: "Membros", icon: Users },
   { href: "/attendance/reports", label: "Relatórios", icon: BarChart3 },
+  { href: "/dashboard", label: "Painel de Controle", icon: LayoutDashboard },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -93,7 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {/* Optional Header Content */}
             </div>
             <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5"/>
+                <Info className="h-5 w-5"/>
             </Button>
         </header>
         <main className="flex-1 flex-col bg-background">
