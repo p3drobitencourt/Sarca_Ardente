@@ -25,6 +25,7 @@ import {
   BarChart3,
   LogOut,
   Info,
+  CircleUser,
 } from "lucide-react";
 
 const navItems = [
@@ -34,6 +35,12 @@ const navItems = [
   { href: "/attendance/reports", label: "Relatórios", icon: BarChart3 },
   { href: "/dashboard", label: "Painel de Controle", icon: LayoutDashboard },
 ];
+
+const user = {
+  name: "Ricardo 123",
+  email: "ricardo@gmail.com",
+  imageUrl: "",
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -70,14 +77,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent">
+          <div className="flex items-center gap-2 p-2 rounded-md">
             <Avatar className="h-9 w-9">
-              <AvatarImage src="https://placehold.co/100x100.png" alt="Professor" data-ai-hint="person"/>
-              <AvatarFallback>PF</AvatarFallback>
+              <AvatarImage src={user.imageUrl} alt={`Foto do ${user.name}`} data-ai-hint="person"/>
+                <AvatarFallback>
+                <img
+                  src="https://api.dicebear.com/9.x/thumbs/svg"
+                  alt="Foto do Usuário"
+                  data-ai-hint="person"
+                  className="h-full w-full object-cover"
+                />
+                </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="font-semibold text-sm">Professor</span>
-              <span className="text-xs text-muted-foreground">professor@exemplo.com</span>
+              <span className="font-semibold text-sm">{user.name}</span>
+              <span className="text-xs text-muted-foreground">{user.email}</span>
             </div>
           </div>
            <SidebarMenuButton asChild tooltip="Sair">
