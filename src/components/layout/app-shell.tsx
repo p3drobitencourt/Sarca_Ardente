@@ -1,6 +1,21 @@
 "use client";
 
 import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+
+import {
   SidebarProvider,
   Sidebar,
   SidebarHeader,
@@ -28,6 +43,8 @@ import {
   CircleUser,
 } from "lucide-react";
 
+import { useState } from "react";
+
 const navItems = [
   { href: "/", label: "Ínicio", icon: Home },
   { href: "/attendance/record", label: "Registrar Presença", icon: ClipboardCheck },
@@ -44,6 +61,7 @@ const user = {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   if (pathname === "/login") {
     return <>{children}</>;
@@ -108,14 +126,79 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex-1">
                 {/* Optional Header Content */}
             </div>
-            <Button variant="ghost" size="icon">
-                <Info className="h-5 w-5"/>
+            <Button variant="ghost" size="icon" onClick={() => setAboutOpen(true)}>
+              <Info className="h-5 w-5"/>
             </Button>
+          <AboutUsDialog open={aboutOpen} onOpenChange={setAboutOpen} />
         </header>
         <main className="flex-1 flex-col bg-background">
             {children}
         </main>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+export function AboutUsDialog({open, onOpenChange}: {open: boolean, onOpenChange: (open: boolean) => void}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Sobre o Projeto</DialogTitle>
+          <DialogDescription>
+            Sarça Ardente é uma aplicação feita para gerenciar membros de congregações religiosas, como foco em facilitar o registro e acompanhamento de presenças nas reuniões.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Separator />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Equipe de Desenvolvimento</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <TeamMember name="Luis Gustavo" github="https://github.com/luisgustavo52" />
+            <TeamMember name="Pedro Bitencourt" github="https://github.com/p3drobitencourt" />
+            <TeamMember name="Enrique Lobo" github="https://github.com/EnrLobo" />
+            <TeamMember name="João Henrique" github="https://github.com/kkjaokk" />
+            <Separator/>
+            <div className="text-xs text-muted-foreground gap-2 flex">
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJYJCPQABgeUdo7EH4fRZRar89eOG1XdYEE3IfJUWWMykIwi1q7Sbm7v2GntSXMdeGad8&usqp=CAU"
+                alt="IFSULDEMINAS Logo"
+                className="inline h-4 align-middle mr-1"
+              />
+              Sistemas Informação IFSULDEMINAS - Campus Machado
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Contato</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>Telefone: (35) 99838-6148</div>
+            <div>Email: pedro.bitencourt@alunos.ifsuldeminas.edu.br</div>
+          </CardContent>
+        </Card>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TeamMember({ name, github }: { name: string; github: string }) {
+  // Extrai o usuário do link do GitHub para usar na imagem/avatar
+  const username = github.replace("https://github.com/", "");
+  return (
+    <div className="flex items-center gap-3">
+      <Avatar>
+        <AvatarImage src={`https://github.com/${username}.png`} />
+        <AvatarFallback>{name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 3)}</AvatarFallback>
+      </Avatar>
+      <a href={github} target="_blank" rel="noopener noreferrer">
+        {name}
+      </a>
+    </div>
   );
 }
