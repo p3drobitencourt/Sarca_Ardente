@@ -150,7 +150,7 @@ export function AboutUsDialog({open, onOpenChange}: {open: boolean, onOpenChange
           </DialogDescription>
         </DialogHeader>
 
-        <Separator />
+        <Separator className="max-w-xs sm:max-w-none" />
 
         <Card>
           <CardHeader>
@@ -162,11 +162,11 @@ export function AboutUsDialog({open, onOpenChange}: {open: boolean, onOpenChange
             <TeamMember name="Enrique Lobo" github="https://github.com/EnrLobo" />
             <TeamMember name="João Henrique" github="https://github.com/kkjaokk" />
             <Separator/>
-            <div className="text-xs text-muted-foreground gap-2 flex">
+            <div className="text-[10px] sm:text-xs text-muted-foreground gap-2 flex">
               <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJYJCPQABgeUdo7EH4fRZRar89eOG1XdYEE3IfJUWWMykIwi1q7Sbm7v2GntSXMdeGad8&usqp=CAU"
-                alt="IFSULDEMINAS Logo"
-                className="inline h-4 align-middle mr-1"
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJYJCPQABgeUdo7EH4fRZRar89eOG1XdYEE3IfJUWWMykIwi1q7Sbm7v2GntSXMdeGad8&usqp=CAU"
+              alt="IFSULDEMINAS Logo"
+              className="inline h-4 align-middle mr-1"
               />
               Sistemas Informação IFSULDEMINAS - Campus Machado
             </div>

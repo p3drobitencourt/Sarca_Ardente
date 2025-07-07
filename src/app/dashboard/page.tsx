@@ -60,7 +60,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="col-span-3">
+        <Card className="col-span-4 sm:col-span-3">
           <CardHeader>
             <CardTitle>Aniversariantes do Mês</CardTitle>
           </CardHeader>
