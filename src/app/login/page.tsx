@@ -103,12 +103,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center">
                 <Label htmlFor="password">Senha</Label>
-                <Link
+                {/* <Link
                   href="#"
                   className="ml-auto inline-block text-sm underline"
                 >
                   Esqueceu sua senha?
-                </Link>
+                </Link> */}
               </div>
               <Input 
                 id="password" 
@@ -128,7 +128,7 @@ export default function LoginPage() {
           </CardFooter>
         </form>
         
-        <div className="relative my-2 px-6">
+        {/* <div className="relative my-2 px-6">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
@@ -137,7 +137,7 @@ export default function LoginPage() {
                 Ou continue com
               </span>
             </div>
-        </div>
+        </div> */}
       </Card>
     </div>
   );

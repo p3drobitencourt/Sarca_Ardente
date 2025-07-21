@@ -8,9 +8,6 @@ import { getAuth } from "firebase/auth"; // Importe o Auth
 // TODO: Adicione os SDKs para os produtos do Firebase que você quer usar
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-// ADICIONE ESTA LINHA PARA TESTE
-console.log("Variável de Ambiente API Key:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
-
 // A configuração do Firebase do seu app web (COPIE DO SEU CONSOLE DO FIREBASE)
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
