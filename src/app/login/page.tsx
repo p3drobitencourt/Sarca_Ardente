@@ -1,5 +1,13 @@
 "use client";
 
+import * as React from "react";
+import { useEffect, useState } from 'react';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,26 +20,66 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (event: React.FormEvent) => {
+  // Redireciona se o usuário já estiver logado
+  useEffect(() => {
+    if (user) {
+      router.push('/');
+    }
+  }, [user, router]);
+
+  const handleEmailSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
-    // In a real app, you'd have auth logic here.
-    // On success, you would redirect.
-    router.push("/");
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/");
+    } catch (error) {
+      console.error("Erro de autenticação por e-mail:", error);
+      toast({
+        title: "Erro de Autenticação",
+        description: "As credenciais fornecidas são inválidas. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      router.push('/');
+    } catch (error) {
+      console.error("Erro ao fazer login com o Google: ", error);
+      toast({
+        title: "Erro de Autenticação",
+        description: "Não foi possível autenticar com o Google. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm">
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleEmailSignIn}>
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
-               <Icons.logo className="h-12 w-12 text-primary" />
+                <Icons.logo className="h-12 w-12 text-primary" />
             </div>
             <CardTitle className="text-2xl font-bold">Sarça Ardente</CardTitle>
             <CardDescription>
@@ -47,6 +95,9 @@ export default function LoginPage() {
                 placeholder="professor@exemplo.com"
                 required
                 autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -59,15 +110,34 @@ export default function LoginPage() {
                   Esqueceu sua senha?
                 </Link>
               </div>
-              <Input id="password" type="password" required autoComplete="current-password" />
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
               Entrar
             </Button>
           </CardFooter>
         </form>
+        
+        <div className="relative my-2 px-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                Ou continue com
+              </span>
+            </div>
+        </div>
       </Card>
     </div>
   );
