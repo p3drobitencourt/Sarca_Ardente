@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
 import { subDays, format } from "date-fns";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,16 +29,21 @@ interface ChartData {
   Presenças: number;
 }
 
+// Nova interface para os dados agregados da tabela
+interface AttendanceSummary {
+  membroId: string;
+  membroNome: string;
+  totalPresencas: number;
+}
+
 export function ReportsClient() {
   const { toast } = useToast();
   
-  // Dados brutos do Firestore
   const [allPresences, setAllPresences] = useState<Presenca[]>([]);
   const [classes, setClasses] = useState<Classe[]>([]);
   const [reunioes, setReunioes] = useState<Reuniao[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
 
-  // Estado dos filtros
   const [selectedReuniaoId, setSelectedReuniaoId] = useState<string>("all");
   const [selectedClasseId, setSelectedClasseId] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -49,7 +53,6 @@ export function ReportsClient() {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Busca inicial de dados para os filtros
   useEffect(() => {
     const unsubscribers = [
       onSnapshot(collection(db, "classes"), (snapshot) => setClasses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Classe)))),
@@ -59,7 +62,6 @@ export function ReportsClient() {
     return () => unsubscribers.forEach(unsub => unsub());
   }, []);
   
-  // Busca de presenças com base no intervalo de datas
   useEffect(() => {
     setIsLoading(true);
     if (!dateRange?.from) return;
@@ -83,8 +85,8 @@ export function ReportsClient() {
     return () => unsubscribe();
   }, [dateRange, toast]);
 
-  // Lógica para filtrar e calcular os dados do relatório
-  const { filteredPresences, stats, chartData } = useMemo(() => {
+  // Lógica de cálculo atualizada para incluir o sumário
+  const { attendanceSummary, stats, chartData } = useMemo(() => {
     let filtered = allPresences;
     if (selectedReuniaoId && selectedReuniaoId !== "all") {
       filtered = filtered.filter(p => p.reuniaoId === selectedReuniaoId);
@@ -93,42 +95,49 @@ export function ReportsClient() {
       filtered = filtered.filter(p => p.classeId === selectedClasseId);
     }
 
+    // Lógica para as estatísticas e gráfico (inalterada)
     const totalPresences = filtered.length;
     const meetingDates = new Set(filtered.map(p => p.dataRegistro.toDate().toLocaleDateString()));
     const uniqueMeetings = meetingDates.size;
     const averageAttendance = uniqueMeetings > 0 ? totalPresences / uniqueMeetings : 0;
     const totalActiveMembers = members.filter(m => m.ativo).length;
     const attendanceRate = (uniqueMeetings > 0 && totalActiveMembers > 0) ? (totalPresences / (uniqueMeetings * totalActiveMembers)) * 100 : 0;
-
     const stats: ReportStats = {
       totalPresences,
       uniqueMeetings,
       averageAttendance: parseFloat(averageAttendance.toFixed(1)),
       attendanceRate: parseFloat(attendanceRate.toFixed(1)),
     };
-
     const groupedByDate = filtered.reduce((acc, p) => {
       const date = format(p.dataRegistro.toDate(), "dd/MM");
       acc[date] = (acc[date] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-
     const chartData: ChartData[] = Object.entries(groupedByDate)
       .map(([date, count]) => ({ date, Presenças: count }))
       .sort((a, b) => new Date(a.date.split('/').reverse().join('-')).getTime() - new Date(b.date.split('/').reverse().join('-')).getTime());
 
-    return { filteredPresences: filtered, stats, chartData };
+    // NOVA LÓGICA: Agregação de presenças por membro
+    const summary = filtered.reduce((acc, p) => {
+      if (!acc[p.membroId]) {
+        acc[p.membroId] = {
+          membroId: p.membroId,
+          membroNome: p.membroNome,
+          totalPresencas: 0,
+        };
+      }
+      acc[p.membroId].totalPresencas += 1;
+      return acc;
+    }, {} as Record<string, AttendanceSummary>);
+
+    const attendanceSummary = Object.values(summary).sort((a, b) => a.membroNome.localeCompare(b.membroNome));
+
+    return { attendanceSummary, stats, chartData };
   }, [allPresences, selectedReuniaoId, selectedClasseId, members]);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Relatórios de Presença</h1>
-          <p className="text-muted-foreground">Analise a frequência dos membros nas reuniões e classes (melhor experiência em telas grandes).</p>
-        </div>
-      </div>
-
+      {/* ... (Cabeçalho e Filtros - inalterados) ... */}
       <Card>
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
@@ -161,7 +170,7 @@ export function ReportsClient() {
           </div>
         </CardContent>
       </Card>
-
+      {/* ... (Cards de Estatísticas e Gráfico - inalterados) ... */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card><CardHeader><CardTitle>Total de Presenças</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-16" /> : stats.totalPresences}</CardContent></Card>
         <Card><CardHeader><CardTitle>Reuniões no Período</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-16" /> : stats.uniqueMeetings}</CardContent></Card>
@@ -186,22 +195,36 @@ export function ReportsClient() {
           }
         </CardContent>
       </Card>
-
+      {/* TABELA DE DETALHES ATUALIZADA */}
       <Card>
-        <CardHeader><CardTitle>Detalhes das Presenças</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Sumário de Presença por Membro</CardTitle></CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead>Membro</TableHead><TableHead>Reunião</TableHead><TableHead>Classe</TableHead><TableHead>Data</TableHead></TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Membro</TableHead>
+                <TableHead className="text-right">Total de Presenças</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
-              {isLoading ? Array.from({ length: 5 }).map((_, i) => <TableRow key={i}><TableCell colSpan={4}><Skeleton className="h-5 w-full" /></TableCell></TableRow>) :
-               filteredPresences.length > 0 ? filteredPresences.map(p => (
-                <TableRow key={p.id}>
-                  <TableCell>{p.membroNome}</TableCell>
-                  <TableCell>{p.reuniaoNome}</TableCell>
-                  <TableCell>{p.classeNome}</TableCell>
-                  <TableCell>{format(p.dataRegistro.toDate(), "dd/MM/yyyy")}</TableCell>
+              {isLoading ? Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-5 w-12" /></TableCell>
                 </TableRow>
-               )) : <TableRow><TableCell colSpan={4} className="text-center">Nenhum registro encontrado para os filtros selecionados.</TableCell></TableRow>
+              )) :
+               attendanceSummary.length > 0 ? attendanceSummary.map(summary => (
+                <TableRow key={summary.membroId}>
+                  <TableCell className="font-medium">{summary.membroNome}</TableCell>
+                  <TableCell className="text-right">{summary.totalPresencas}</TableCell>
+                </TableRow>
+               )) : (
+                <TableRow>
+                  <TableCell colSpan={2} className="h-24 text-center">
+                    Nenhum registro encontrado para os filtros selecionados.
+                  </TableCell>
+                </TableRow>
+               )
               }
             </TableBody>
           </Table>

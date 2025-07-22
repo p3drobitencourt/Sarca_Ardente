@@ -62,15 +62,17 @@ export function AttendanceRecordClient() {
     const unsubscribers = [
       onSnapshot(collection(db, "membros"), (snapshot) => {
         const membersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Member));
-        setMembers(membersData.filter(m => m.ativo)); // Apenas membros ativos
+        // AQUI ESTÁ A ORDENAÇÃO ALFABÉTICA
+        const sortedMembers = membersData
+          .filter(m => m.ativo)
+          .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto));
+        setMembers(sortedMembers);
       }),
       onSnapshot(collection(db, "classes"), (snapshot) => {
-        const classesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Classe));
-        setClasses(classesData);
+        setClasses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Classe)));
       }),
       onSnapshot(collection(db, "reunioes"), (snapshot) => {
-        const reunioesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reuniao));
-        setReunioes(reunioesData);
+        setReunioes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reuniao)));
       })
     ];
 
