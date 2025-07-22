@@ -155,11 +155,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 // O componente AboutUsDialog e TeamMember permanecem os mesmos
 export function AboutUsDialog({open, onOpenChange}: {open: boolean, onOpenChange: (open: boolean) => void}) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={onOpenChange} >
+      <DialogContent >
         <DialogHeader>
           <DialogTitle>Sobre o Projeto</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-[10px] sm:text-sm">
             Sarça Ardente é uma aplicação feita para gerenciar membros de congregações religiosas, com foco em facilitar o registro e acompanhamento de presenças nas reuniões.
           </DialogDescription>
         </DialogHeader>

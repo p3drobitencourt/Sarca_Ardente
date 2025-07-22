@@ -40,8 +40,8 @@ export function ReportsClient() {
   const [members, setMembers] = useState<Member[]>([]);
 
   // Estado dos filtros
-  const [selectedReuniaoId, setSelectedReuniaoId] = useState<string>("");
-  const [selectedClasseId, setSelectedClasseId] = useState<string>("");
+  const [selectedReuniaoId, setSelectedReuniaoId] = useState<string>("all");
+  const [selectedClasseId, setSelectedClasseId] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 29),
     to: new Date(),
@@ -86,10 +86,10 @@ export function ReportsClient() {
   // Lógica para filtrar e calcular os dados do relatório
   const { filteredPresences, stats, chartData } = useMemo(() => {
     let filtered = allPresences;
-    if (selectedReuniaoId) {
+    if (selectedReuniaoId && selectedReuniaoId !== "all") {
       filtered = filtered.filter(p => p.reuniaoId === selectedReuniaoId);
     }
-    if (selectedClasseId) {
+    if (selectedClasseId && selectedClasseId !== "all") {
       filtered = filtered.filter(p => p.classeId === selectedClasseId);
     }
 
@@ -125,7 +125,7 @@ export function ReportsClient() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Relatórios de Presença</h1>
-          <p className="text-muted-foreground">Analise a frequência dos membros nas reuniões e classes.</p>
+          <p className="text-muted-foreground">Analise a frequência dos membros nas reuniões e classes (melhor experiência em telas grandes).</p>
         </div>
       </div>
 
@@ -144,7 +144,7 @@ export function ReportsClient() {
             <Select value={selectedReuniaoId} onValueChange={setSelectedReuniaoId}>
               <SelectTrigger><SelectValue placeholder="Todas as reuniões" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as reuniões</SelectItem>
+                <SelectItem value="all">Todas as reuniões</SelectItem>
                 {reunioes.map(r => <SelectItem key={r.id} value={r.id!}>{r.nome}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -154,7 +154,7 @@ export function ReportsClient() {
             <Select value={selectedClasseId} onValueChange={setSelectedClasseId}>
               <SelectTrigger><SelectValue placeholder="Todas as classes" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as classes</SelectItem>
+                <SelectItem value="all">Todas as classes</SelectItem>
                 {classes.map(c => <SelectItem key={c.id} value={c.id!}>{c.nome}</SelectItem>)}
               </SelectContent>
             </Select>

@@ -185,7 +185,7 @@ export function DashboardClient() {
     <div className="p-4 sm:p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Painel de Controle</h1>
-        <p className="text-muted-foreground">Gira as configurações centrais da aplicação.</p>
+        <p className="text-muted-foreground">Algumas onfigurações e informações da aplicação.</p>
       </div>
       <Tabs defaultValue="classes" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -196,14 +196,14 @@ export function DashboardClient() {
           <ManagementList<Classe>
             collectionName="classes"
             title="Classe"
-            description="Crie e edite as classes para a Escola Bíblica Dominical."
+            description="Crie e edite as classes para as reuniões (ex: Classe dos Jovens)."
           />
         </TabsContent>
         <TabsContent value="reunioes">
           <ManagementList<Reuniao>
             collectionName="reunioes"
             title="Reunião"
-            description="Crie e edite os tipos de reunião (ex: Culto de Ensino)."
+            description="Crie e edite as diferentes de reuniões (ex: Escola Bíblica Dominical)."
           />
         </TabsContent>
       </Tabs>
