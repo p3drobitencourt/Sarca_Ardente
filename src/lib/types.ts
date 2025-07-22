@@ -1,31 +1,38 @@
-export enum MemberStatus {
-  Active = 'active',
-  Inactive = 'inactive',
-}
 
+import { Timestamp } from 'firebase/firestore';
+
+// Interface para a coleção 'membros'
 export interface Member {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  status: MemberStatus;
+  id?: string; // O ID do documento do Firestore
+  nomeCompleto: string;
+  telefone?: string;
+  dataNascimento: Timestamp;
+  dataDeIngresso: Timestamp;
+  ativo: boolean;
+  professo: boolean;
 }
 
-export interface Class {
-  id: string;
-  name: string;
+// Interface para a coleção 'classes'
+export interface Classe {
+  id?: string;
+  nome: string;
 }
 
-export interface Meeting {
-  id: string;
-  name: string;
-  date: Date;
+// Interface para a coleção 'reunioes'
+export interface Reuniao {
+  id?: string;
+  nome: string;
 }
 
-export interface Attendance {
-  id: string;
-  memberId: string;
-  classId: string;
-  meetingId: string;
-  date: Date;
+// Interface para a coleção 'presencas'
+export interface Presenca {
+  id?: string;
+  dataRegistro: Timestamp;
+  membroId: string;
+  membroNome: string; // Denormalizado
+  classeId: string;
+  classeNome: string; // Denormalizado
+  reuniaoId: string;
+  reuniaoNome: string; // Denormalizado
+  registradoPorId: string; // UserID do Auth
 }

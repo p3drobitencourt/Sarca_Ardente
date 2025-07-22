@@ -1,6 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { Member } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,13 +17,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,113 +32,157 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { Member, MemberStatus } from "@/lib/types";
 import { MemberForm } from "./member-form";
+import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, PlusCircle, Trash2, Edit } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "../ui/skeleton";
+import { Card } from "../ui/card";
 
-interface MembersClientProps {
-  data: Member[];
-}
+export function MembersClient() {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const { toast } = useToast();
 
-export function MembersClient({ data }: MembersClientProps) {
-  const [members, setMembers] = useState<Member[]>(data);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  useEffect(() => {
+    const membersCollectionRef = collection(db, "membros"); // Coleção 'membros'
+    const unsubscribe = onSnapshot(membersCollectionRef, (snapshot) => {
+      const membersData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      } as Member));
+      setMembers(membersData);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Erro ao buscar membros: ", error);
+      toast({ title: "Erro de Conexão", description: "Não foi possível carregar os membros.", variant: "destructive" });
+      setIsLoading(false);
+    });
 
-  const handleOpenForm = (member?: Member) => {
-    setSelectedMember(member || null);
-    setIsFormOpen(true);
-  };
+    return () => unsubscribe();
+  }, [toast]);
 
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setSelectedMember(null);
-  };
-
-  const handleOpenAlert = (member: Member) => {
-    setSelectedMember(member);
-    setIsAlertOpen(true);
-  };
-
-  const handleCloseAlert = () => {
-    setIsAlertOpen(false);
-    setSelectedMember(null);
-  };
-
-  const handleFormSubmit = (values: any) => {
-    // In a real app, you would send this to your API
-    if (selectedMember) {
-      // Update member
-      setMembers(
-        members.map((m) =>
-          m.id === selectedMember.id ? { ...m, ...values } : m
-        )
-      );
-    } else {
-      // Add new member
-      setMembers([...members, { ...values, id: `mem-${Date.now()}` }]);
+  const handleFormSubmit = async (memberData: Omit<Member, 'id'>) => {
+    try {
+      if (editingMember) {
+        const memberDocRef = doc(db, "membros", editingMember.id!);
+        await updateDoc(memberDocRef, memberData as any);
+        toast({ title: "Sucesso!", description: "Membro atualizado com sucesso." });
+      } else {
+        await addDoc(collection(db, "membros"), memberData);
+        toast({ title: "Sucesso!", description: "Membro adicionado com sucesso." });
+      }
+      closeDialog();
+    } catch (error) {
+      console.error("Erro ao salvar membro:", error);
+      toast({ title: "Erro!", description: "Não foi possível salvar o membro.", variant: "destructive" });
     }
-    handleCloseForm();
   };
 
-  const handleDeactivate = () => {
-    if (selectedMember) {
-      setMembers(
-        members.map((m) =>
-          m.id === selectedMember.id
-            ? { ...m, status: MemberStatus.Inactive }
-            : m
-        )
-      );
+  const handleDeleteMember = async (memberId: string) => {
+    try {
+      await deleteDoc(doc(db, "membros", memberId));
+      toast({ title: "Sucesso!", description: "Membro apagado com sucesso." });
+    } catch (error) {
+      console.error("Erro ao apagar membro:", error);
+      toast({ title: "Erro!", description: "Não foi possível apagar o membro.", variant: "destructive" });
     }
-    handleCloseAlert();
   };
+
+  const openEditDialog = (member: Member) => {
+    setEditingMember(member);
+    setIsDialogOpen(true);
+  };
+
+  const openNewDialog = () => {
+    setEditingMember(null);
+    setIsDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+  };
+
+  // Efeito para fechar o diálogo quando a edição terminar
+  useEffect(() => {
+    if (!isDialogOpen) {
+      setEditingMember(null);
+    }
+  }, [isDialogOpen]);
 
   return (
-    <>
-      <div className="flex justify-end mb-4">
-        <Button onClick={() => handleOpenForm()}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adicionar Membro
-        </Button>
+    <div className="p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Gestão de Membros</h1>
+          <p className="text-muted-foreground">Adicione, edite e visualize os membros da congregação.</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={openNewDialog}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Adicionar Membro
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>{editingMember ? "Editar Membro" : "Adicionar Novo Membro"}</DialogTitle>
+            </DialogHeader>
+            <MemberForm
+              onSubmit={handleFormSubmit}
+              initialData={editingMember}
+              onClose={closeDialog}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
-      <div className="rounded-md border">
+
+      <Card>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Telefone</TableHead>
+              <TableHead>Nome Completo</TableHead>
+              <TableHead>Data de Ingresso</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>
-                <span className="sr-only">Ações</span>
-              </TableHead>
+              <TableHead>Professo</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.length ? (
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : members.length > 0 ? (
               members.map((member) => (
                 <TableRow key={member.id}>
-                  <TableCell className="font-medium">{member.name}</TableCell>
-                  <TableCell>{member.email}</TableCell>
-                  <TableCell>{member.phone || "-"}</TableCell>
+                  <TableCell className="font-medium">{member.nomeCompleto}</TableCell>
                   <TableCell>
-                    <Badge variant={member.status === MemberStatus.Active ? "default" : "secondary"} className={member.status === MemberStatus.Active ? 'bg-green-500' : 'bg-red-500'}>
-                      {member.status === MemberStatus.Active ? "Ativo" : "Inativo"}
+                    {member.dataDeIngresso instanceof Timestamp
+                      ? member.dataDeIngresso.toDate().toLocaleDateString('pt-BR')
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={member.ativo ? 'default' : 'secondary'}>
+                      {member.ativo ? 'Ativo' : 'Inativo'}
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    <Badge variant={member.professo ? 'outline' : 'secondary'}>
+                      {member.professo ? 'Sim' : 'Não'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -141,17 +191,35 @@ export function MembersClient({ data }: MembersClientProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleOpenForm(member)}>
-                          Editar
+                        <DropdownMenuItem onClick={() => openEditDialog(member)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Editar</span>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleOpenAlert(member)}
-                          className="text-destructive"
-                        >
-                          Desativar
-                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Apagar</span>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isto irá apagar permanentemente o membro dos registos.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive hover:bg-destructive/90"
+                                onClick={() => handleDeleteMember(member.id!)}
+                              >
+                                Sim, apagar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -160,46 +228,13 @@ export function MembersClient({ data }: MembersClientProps) {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  Nenhum membro encontrado.
+                  Nenhum membro encontrado. Comece por adicionar um novo membro.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-      </div>
-
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{selectedMember ? "Editar Membro" : "Adicionar Membro"}</DialogTitle>
-            <DialogDescription>
-              {selectedMember
-                ? "Atualize as informações do membro."
-                : "Preencha as informações para adicionar um novo membro."}
-            </DialogDescription>
-          </DialogHeader>
-          <MemberForm
-            initialData={selectedMember}
-            onSubmit={handleFormSubmit}
-            onClose={handleCloseForm}
-          />
-        </DialogContent>
-      </Dialog>
-      
-      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação irá desativar o membro &quot;{selectedMember?.name}&quot;. Ele não poderá ser marcado como presente em reuniões.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCloseAlert}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeactivate} className="bg-destructive hover:bg-destructive/90">Desativar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+      </Card>
+    </div>
   );
 }
